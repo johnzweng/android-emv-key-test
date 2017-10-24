@@ -8,8 +8,8 @@ android {
         applicationId "at.zweng.emv.keytest"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 1
-        versionName "0.0.1-SNAPSHOT"
+        versionCode 2
+        versionName "1.0.0-SNAPSHOT"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

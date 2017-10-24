@@ -7,10 +7,13 @@ import android.nfc.tech.IsoDep;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import at.zweng.emv.ca.RootCa;
 import at.zweng.emv.ca.RootCaManager;
 import at.zweng.emv.keys.CaPublicKey;
 import at.zweng.emv.keys.EmvPublicKey;
+import at.zweng.emv.keys.checks.ROCACheck;
 import at.zweng.emv.provider.Provider;
 import at.zweng.emv.utils.EmvKeyReader;
 import at.zweng.emv.utils.NFCUtils;
@@ -19,8 +22,11 @@ import com.github.devnied.emvnfccard.model.EmvCard;
 import com.github.devnied.emvnfccard.parser.EmvParser;
 import fr.devnied.bitlib.BytesUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 //import sasc.emv.CA;
 
@@ -29,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getName();
     private NFCUtils mNfcUtils;
     private EmvCard mReadCard;
+
+    private TextView statusText;
+    private ScrollView scrollView;
 
     /**
      * IsoDep provider
@@ -40,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mNfcUtils = new NFCUtils(this);
+        statusText = findViewById(R.id.statusText);
+        scrollView = findViewById(R.id.scrollView);
         // init known Root CA's from XML file in resources
     }
 
@@ -69,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 protected void onPreExecute() {
                     super.onPreExecute();
-                    Log.i(TAG, "Start reading card....");
+                    log("Start reading card.... Please wait....");
                     // TODO: clear, show spinner or something similiar
                 }
 
@@ -78,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
                     mTagcomm = IsoDep.get(mTag);
                     if (mTagcomm == null) {
                         // TODO: show error toast or snackbar
-                        Log.w(TAG, "Have no card, will exit.");
+                        log("we have no card, will exit :-(");
                         return;
                     }
                     mException = false;
@@ -99,7 +110,8 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 protected void onPostExecute(final Object result) {
-                    Log.i(TAG, "Reading finished");
+
+                    log("Reading finished.");
                     // TODO hide spinner, etc..
                     if (!mException) {
                         if (mCard != null) {
@@ -109,13 +121,16 @@ public class MainActivity extends AppCompatActivity {
                             } else {
                                 // TODO: handle unknown
                                 Log.w(TAG, "reading finished, no exception but cardNumber is null or empty..");
+                                log("Sorry, I didn't get that (got no cardnumber). Please try again.");
                             }
                         } else {
                             Log.w(TAG, "reading finished, no exception but card == null..");
+                            log("Sorry, I couldn parse data. Try again (card is null).");
                         }
                     } else {
                         // TODO handle mException
                         Log.w(TAG, "reading finished with exception..");
+                        log("Sorry, we catched an exception. Please try again.");
                     }
                 }
             }.execute();
@@ -123,21 +138,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void debugKeys() {
-        Log.i(TAG, "=====================================");
-        Log.i(TAG, "=====================================");
-        Log.i(TAG, "reading finished, and we got a card. :) Card number: " +
-                mReadCard.getCardNumber());
-        Log.i(TAG, "Issuer pubkey cert: " + BytesUtils.bytesToString(mReadCard.getIssuerPublicKeyCertificate()));
-        Log.i(TAG, "Issuer pubkey remainder: " + BytesUtils.bytesToString(mReadCard.getIssuerPublicKeyRemainder()));
-        Log.i(TAG, "Issuer pubkey exponent: " + BytesUtils.bytesToString(mReadCard.getIssuerPublicKeyExponent()));
-        Log.i(TAG, "ICC pubkey cert: " + BytesUtils.bytesToString(mReadCard.getIccPublicKeyCertificate()));
-        Log.i(TAG, "ICC pubkey remainder: " + BytesUtils.bytesToString(mReadCard.getIccPublicKeyRemainder()));
-        Log.i(TAG, "ICC pubkey exponent: " + BytesUtils.bytesToString(mReadCard.getIccPublicKeyExponent()));
-        Log.i(TAG, "PIN pubkey cert: " + BytesUtils.bytesToString(mReadCard.getIccPinEnciphermentPublicKeyCertificate()));
-        Log.i(TAG, "PIN pubkey remainder: " + BytesUtils.bytesToString(mReadCard.getIccPinEnciphermentPublicKeyRemainder()));
-        Log.i(TAG, "PIN pubkey exponent: " + BytesUtils.bytesToString(mReadCard.getIccPinEnciphermentPublicKeyExponent()));
-        Log.i(TAG, "=====================================");
-        Log.i(TAG, "=====================================");
+        //        log("=====================================");
+        //        log("=====================================");
+        //        log("reading finished, and we got a card. :) Card number: " +
+        //                mReadCard.getCardNumber());
+        //        log("Issuer pubkey cert: " + BytesUtils.bytesToString(mReadCard.getIssuerPublicKeyCertificate()));
+        //        log("Issuer pubkey remainder: " + BytesUtils.bytesToString(mReadCard.getIssuerPublicKeyRemainder()));
+        //        log("Issuer pubkey exponent: " + BytesUtils.bytesToString(mReadCard.getIssuerPublicKeyExponent()));
+        //        log("ICC pubkey cert: " + BytesUtils.bytesToString(mReadCard.getIccPublicKeyCertificate()));
+        //        log("ICC pubkey remainder: " + BytesUtils.bytesToString(mReadCard.getIccPublicKeyRemainder()));
+        //        log("ICC pubkey exponent: " + BytesUtils.bytesToString(mReadCard.getIccPublicKeyExponent()));
+        //        log("PIN pubkey cert: " + BytesUtils.bytesToString(mReadCard.getIccPinEnciphermentPublicKeyCertificate()));
+        //        log("PIN pubkey remainder: " + BytesUtils.bytesToString(mReadCard.getIccPinEnciphermentPublicKeyRemainder()));
+        //        log("PIN pubkey exponent: " + BytesUtils.bytesToString(mReadCard.getIccPinEnciphermentPublicKeyExponent()));
+        //        log("=====================================");
 
 
         try {
@@ -149,24 +163,48 @@ public class MainActivity extends AppCompatActivity {
 
             final EmvPublicKey issuerKey = keyReader.parseIssuerPublicKey(caKey, mReadCard.getIssuerPublicKeyCertificate(),
                     mReadCard.getIssuerPublicKeyRemainder(), mReadCard.getIssuerPublicKeyExponent());
-            Log.i(TAG, "-----------------------------");
-            Log.i(TAG, "ca key size: " + (caKey.getModulusBytes().length * 8));
-            Log.i(TAG, "ca key Modulus: " + BytesUtils.bytesToString(caKey.getModulusBytes()));
-            Log.i(TAG, "ca key Exponent: " + BytesUtils.bytesToString(caKey.getPublicExponentBytes()));
-            Log.i(TAG, "ca key expiration date: " + caKey.getExpirationDate());
-            Log.i(TAG, "-----------------------------");
-            Log.i(TAG, "issuer pubkey size in bits: " + (issuerKey.getModulusBytes().length * 8));
-            Log.i(TAG, "issuer pubkey Modulus: " + BytesUtils.bytesToString(issuerKey.getModulusBytes()));
-            Log.i(TAG, "issuer pubkey Exponent: " + BytesUtils.bytesToString(issuerKey.getPublicExponentBytes()));
-            Log.i(TAG, "issuer pubkey expiration date: " + issuerKey.getExpirationDate());
-            Log.i(TAG, "issuer pubkey is valid: " + keyReader.validateIssuerPublicKey(caKey, mReadCard.getIssuerPublicKeyCertificate(),
+            log("-----------------------------");
+            log("CA key size: " + (caKey.getModulusBytes().length * 8) + " bits");
+            log("CA key Modulus:\n" + BytesUtils.bytesToString(caKey.getModulusBytes()));
+            log("CA key Exponent: " + BytesUtils.bytesToString(caKey.getPublicExponentBytes()));
+            log("CA key expiration date: " + formatDate(caKey.getExpirationDate()));
+            log("CA key ROCA vulnerable: " + ROCACheck.isAffectedByROCA(caKey.getModulus()));
+            log("-----------------------------");
+            log("Issuer pubkey size: " + (issuerKey.getModulusBytes().length * 8) + " bits");
+            log("Issuer pubkey Modulus:\n" + BytesUtils.bytesToString(issuerKey.getModulusBytes()));
+            log("Issuer pubkey Exponent: " + BytesUtils.bytesToString(issuerKey.getPublicExponentBytes()));
+            log("Issuer pubkey expiration date: " + formatDate(issuerKey.getExpirationDate()));
+            log("Issuer pubkey is valid: " + keyReader.validateIssuerPublicKey(caKey, mReadCard.getIssuerPublicKeyCertificate(),
                     mReadCard.getIssuerPublicKeyRemainder(), mReadCard.getIssuerPublicKeyExponent()));
-            Log.i(TAG, "-----------------------------");
+            log("Issuer pubkey ROCA vulnerable: " + ROCACheck.isAffectedByROCA(issuerKey.getModulus()));
+            log("-----------------------------");
         } catch (Exception e) {
             Log.e(TAG, "Exception catched while key validation.", e);
+            log("Exception catched while key validation: " + e.getClass().getCanonicalName());
+            log(e.getLocalizedMessage());
+            log(ExceptionUtils.getStackTrace(e));
         }
     }
 
+
+    private void log(String msg) {
+        Log.i(TAG, msg);
+        StringBuffer buf = new StringBuffer(statusText.getText());
+        buf.append(msg);
+        buf.append("\n");
+        statusText.setText(buf);
+        // and scroll down to the end
+        scrollView.post(new Runnable() {
+            public void run() {
+                scrollView.smoothScrollTo(0, statusText.getBottom());
+            }
+        });
+    }
+
+    private String formatDate(Date monthYear) {
+        SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy");
+        return sdf.format(monthYear);
+    }
 
     private void closeQuietly(IsoDep tagComm) {
         try {
