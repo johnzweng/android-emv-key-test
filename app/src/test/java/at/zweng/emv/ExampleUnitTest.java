@@ -1,4 +1,4 @@
-package at.zweng.emvroca;
+package at.zweng.emv;
 
 import org.junit.Test;
 

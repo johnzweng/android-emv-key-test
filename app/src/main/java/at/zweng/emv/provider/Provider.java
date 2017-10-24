@@ -1,8 +1,8 @@
-package at.zweng.emvroca.provider;
+package at.zweng.emv.provider;
 
 import android.nfc.tech.IsoDep;
 import android.util.Log;
-import at.zweng.emvroca.BuildConfig;
+import at.zweng.emv.BuildConfig;
 import com.github.devnied.emvnfccard.enums.SwEnum;
 import com.github.devnied.emvnfccard.exception.CommunicationException;
 import com.github.devnied.emvnfccard.parser.IProvider;

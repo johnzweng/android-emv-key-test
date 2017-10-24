@@ -1,4 +1,4 @@
-package at.zweng.emvroca.utils;
+package at.zweng.emv.utils;
 
 import android.app.Activity;
 import android.app.PendingIntent;

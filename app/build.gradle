@@ -1,10 +1,11 @@
 apply plugin: 'com.android.application'
 
+
 android {
     compileSdkVersion 26
     buildToolsVersion "26.0.2"
     defaultConfig {
-        applicationId "at.zweng.emvroca"
+        applicationId "at.zweng.emv.keytest"
         minSdkVersion 19
         targetSdkVersion 26
         versionCode 1
@@ -17,20 +18,27 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    packagingOptions {
+        // avoid duplicate files error with Jackson libs
+        exclude 'META-INF/LICENSE'
+    }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'org.slf4j:slf4j-android:1.7.7'
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     // use Julien Millau's bit and byte manipulation library (used by his EMV parsing code)
     compile 'com.github.devnied:bit-lib4j:1.5.0'
     // commons, used by Julien Millau's EMV library code
     compile 'org.apache.commons:commons-lang3:3.6'
     compile 'org.apache.commons:commons-io:1.3.2'
     compile 'org.apache.commons:commons-collections4:4.1'
-
-
-
+    compile 'org.slf4j:slf4j-android:1.7.7'
+    // use jackson for JSON
+    compile 'com.fasterxml.jackson.core:jackson-core:2.9.2'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.2'
+    compile 'com.fasterxml.jackson.core:jackson-annotations:2.9.2'
+    // use lombok annotations
+    provided 'org.projectlombok:lombok:1.16.18'
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
