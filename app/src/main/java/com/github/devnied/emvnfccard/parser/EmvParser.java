@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -418,44 +419,66 @@ public class EmvParser {
                 extractCardHolderName(pGpo);
             }
         }
-
-        if (data != null) {
+        List<Afl> listAfl;
+        if (data == null) {
+            // if we are not able to parse an AFL list, just create a manual one
+            // in 99% of the cards all the interesting infos are in the first few SFIs.
+            listAfl = createManualAfl();
+        } else {
             // Extract Afl
-            List<Afl> listAfl = extractAfl(data);
-            // for each AFL
-            for (Afl afl : listAfl) {
-                // check all records
-                for (int index = afl.getFirstRecord(); index <= afl.getLastRecord(); index++) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Parsing records: sfi: " + afl.getSfi() + ", index: " + index);
-                    }
-                    byte[] info = provider.transceive(new CommandApdu(CommandEnum.READ_RECORD, index, afl.getSfi() << 3 | 4, 0).toBytes());
-                    if (ResponseUtils.isEquals(info, SwEnum.SW_6C)) {
-                        info = provider.transceive(new CommandApdu(CommandEnum.READ_RECORD, index, afl.getSfi() << 3 | 4,
-                                info[info.length - 1]).toBytes());
-                    }
+            listAfl = extractAfl(data);
+        }
+        // for each AFL
+        for (Afl afl : listAfl) {
+            // check all records
+            for (int index = afl.getFirstRecord(); index <= afl.getLastRecord(); index++) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Parsing records: sfi: " + afl.getSfi() + ", index: " + index);
+                }
+                byte[] info = provider.transceive(new CommandApdu(CommandEnum.READ_RECORD, index, afl.getSfi() << 3 | 4, 0).toBytes());
+                if (ResponseUtils.isEquals(info, SwEnum.SW_6C)) {
+                    info = provider.transceive(new CommandApdu(CommandEnum.READ_RECORD, index, afl.getSfi() << 3 | 4,
+                            info[info.length - 1]).toBytes());
+                }
 
-                    // Extract card data
-                    if (ResponseUtils.isSucceed(info)) {
-                        extractCardHolderName(info);
-                        extractCaPublicKeyIndex(info);
-                        extractIssuerPublicKeyTags(info);
-                        extractIccPublicKeyTags(info);
-                        extractIccPinEnciphermentPublicKeyTags(info);
-                        TrackUtils.extractTrack2Data(card, info);
-                        // if we were here, we were able to read at least one record
-                        // and therefore will assume that we had found a EMV application.
-                        // Returning true prevents that we will continue to look for other EMV applications.
-                        if (!ret) {
-                            ret = true;
-                        }
-                        // and we do not exit the method here, as we want to read all SFIs and records
-                        // in this EMV application
+                // Extract card data
+                if (ResponseUtils.isSucceed(info)) {
+                    extractCardHolderName(info);
+                    extractCaPublicKeyIndex(info);
+                    extractIssuerPublicKeyTags(info);
+                    extractIccPublicKeyTags(info);
+                    extractIccPinEnciphermentPublicKeyTags(info);
+                    TrackUtils.extractTrack2Data(card, info);
+                    // if we were here, we were able to read at least one record
+                    // and therefore will assume that we had found a EMV application.
+                    // Returning true prevents that we will continue to look for other EMV applications.
+                    if (!ret) {
+                        ret = true;
                     }
+                    // and we do not exit the method here, as we want to read all SFIs and records
+                    // in this EMV application
                 }
             }
         }
         return ret;
+    }
+
+    /**
+     * If for some reason we don't get any AFL from card, construct a dummy AFL which hardcoded contains
+     * the first few SLFs and records.
+     *
+     * @return
+     */
+    private List<Afl> createManualAfl() {
+        List<Afl> aflList = new LinkedList<>();
+        for (int i = 1; i <= 7; i++) {
+            Afl afl = new Afl();
+            afl.setSfi(i);
+            afl.setFirstRecord(1);
+            afl.setLastRecord(5);
+            aflList.add(afl);
+        }
+        return aflList;
     }
 
     /**
@@ -664,6 +687,9 @@ public class EmvParser {
      * @return return data
      */
     protected byte[] getGetProcessingOptions(final byte[] pPdol, final IProvider pProvider) throws CommunicationException {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Sending GPO with PDOL: " + BytesUtils.bytesToString(pPdol));
+        }
         // List Tag and length from PDOL
         List<TagAndLength> list = TlvUtil.parseTagAndLength(pPdol);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
