@@ -2,6 +2,7 @@ package at.zweng.emv.ca;
 
 import android.content.Context;
 import at.zweng.emv.R;
+import at.zweng.emv.utils.EmvParsingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.devnied.bitlib.BytesUtils;
@@ -41,7 +42,7 @@ public class RootCaManager {
      *            or 0xA000000004 for MASTERCARD)
      * @return root CA containing well-known public root CA keys for the card scheme
      */
-    public RootCa getCaForRid(@NonNull byte[] rid) {
+    public RootCa getCaForRid(@NonNull byte[] rid) throws EmvParsingException {
         return getCaForRid(BytesUtils.bytesToStringNoSpace(rid).toUpperCase());
     }
 
@@ -49,11 +50,16 @@ public class RootCaManager {
      * Get the root CA for the given RID identifier bytes
      *
      * @param ridAsString the RID identifying a card scheme (i.e. 0xA000000003 for VISA
-     *            or 0xA000000004 for MASTERCARD)
+     *                    or 0xA000000004 for MASTERCARD)
      * @return root CA containing well-known public root CA keys for the card scheme
      */
-    public RootCa getCaForRid(@NonNull String ridAsString) {
-        return rootCAs.get(ridAsString.toUpperCase());
+    public RootCa getCaForRid(@NonNull String ridAsString) throws EmvParsingException {
+        final RootCa rootCa = rootCAs.get(ridAsString.toUpperCase());
+        if (rootCa == null) {
+            throw new EmvParsingException(String.format("This app doesn't contain the root CA key for the RID %s. " +
+                    "Therefore recovery of public key is not possible. Please contact the maintainer.", ridAsString));
+        }
+        return rootCa;
     }
 
 }

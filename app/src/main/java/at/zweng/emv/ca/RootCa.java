@@ -1,6 +1,7 @@
 package at.zweng.emv.ca;
 
 import at.zweng.emv.keys.CaPublicKey;
+import at.zweng.emv.utils.EmvParsingException;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,12 +34,14 @@ public class RootCa {
      * @param index published index of the CA key to retrieve
      * @return the CA public key or null if not found
      */
-    public CaPublicKey getCaPublicKeyWithIndex(final int index) {
+    public CaPublicKey getCaPublicKeyWithIndex(final int index) throws EmvParsingException {
         for (CaPublicKey key : caPublicKeys) {
             if (key.getIndex() == index) {
                 return key;
             }
         }
-        return null;
+        throw new EmvParsingException(String.format("The root CA key with index '%d' for the card scheme '%s' is " +
+                        "missing. Therefore recovery of public key is not possible. Please contact the maintainer.",
+                index, this.getCardSchemeName()));
     }
 }

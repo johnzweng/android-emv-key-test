@@ -46,4 +46,14 @@ public class EmvUtils {
         return signedBytes;
     }
 
+    /**
+     * Check if bytearray is empty.
+     *
+     * @param bytearray
+     * @return true if not null and not empty
+     */
+    public static boolean notEmpty(byte[] bytearray) {
+        return bytearray != null && bytearray.length > 0;
+    }
+
 }

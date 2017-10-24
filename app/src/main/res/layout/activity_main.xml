@@ -5,7 +5,7 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#000000"
+        android:background="#e7e7e7"
         tools:context="at.zweng.emv.MainActivity">
 
     <ScrollView
@@ -24,8 +24,8 @@
                     android:text="Please tap your NFC banking card...\n"
                     android:textSize="10dp"
                     android:fontFamily="monospace"
-                    android:background="#000000"
-                    android:textColor="#66e61c"
+                    android:background="#e7e7e7"
+                    android:textColor="#0e61dc"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintRight_toRightOf="parent"
