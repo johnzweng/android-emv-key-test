@@ -127,7 +127,7 @@ public class EmvParser {
      * Method used to select payment environment PSE or PPSE
      *
      * @return response byte array
-	 * @throws CommunicationException
+     * @throws CommunicationException
      */
     protected byte[] selectPaymentEnvironment() throws CommunicationException {
         if (LOGGER.isDebugEnabled()) {
@@ -141,7 +141,7 @@ public class EmvParser {
      * Method used to get the number of pin try left
      *
      * @return the number of pin try left
-	 * @throws CommunicationException
+     * @throws CommunicationException
      */
     protected int getLeftPinTry() throws CommunicationException {
         int ret = UNKNOW;
@@ -165,8 +165,8 @@ public class EmvParser {
      *
 	 * @param pData
 	 *            data to parse
-	 * @return
-	 * @throws CommunicationException
+     * @return
+     * @throws CommunicationException
      */
     protected byte[] parseFCIProprietaryTemplate(final byte[] pData) throws CommunicationException {
         // Get SFI
@@ -228,6 +228,9 @@ public class EmvParser {
             if (ResponseUtils.isSucceed(data)) {
                 // Get Aids
                 List<byte[]> aids = getAids(data);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Payment System Environment contained " + aids.size() + " aid entries.");
+                }
                 for (byte[] aid : aids) {
                     ret = extractPublicData(aid, extractApplicationLabel(data));
                     if (ret == true) {
@@ -290,7 +293,7 @@ public class EmvParser {
 	 * @param pAid
 	 *            byte array containing AID or RID
      * @return response byte array
-	 * @throws CommunicationException
+     * @throws CommunicationException
      */
     protected byte[] selectAID(final byte[] pAid) throws CommunicationException {
         if (LOGGER.isDebugEnabled()) {
@@ -440,7 +443,14 @@ public class EmvParser {
                         extractIccPublicKeyTags(info);
                         extractIccPinEnciphermentPublicKeyTags(info);
                         TrackUtils.extractTrack2Data(card, info);
-                        // we do not exit the method here, as we want to read all SFIs and records
+                        // if we were here, we were able to read at least one record
+                        // and therefore will assume that we had found a EMV application.
+                        // Returning true prevents that we will continue to look for other EMV applications.
+                        if (!ret) {
+                            ret = true;
+                        }
+                        // and we do not exit the method here, as we want to read all SFIs and records
+                        // in this EMV application
                     }
                 }
             }
@@ -452,7 +462,7 @@ public class EmvParser {
      * Method used to get log format
      *
      * @return list of tag and length for the log format
-	 * @throws CommunicationException
+     * @throws CommunicationException
      */
     protected List<TagAndLength> getLogFormat() throws CommunicationException {
         List<TagAndLength> ret = new ArrayList<TagAndLength>();
