@@ -23,7 +23,8 @@ where credits for porting it to Java go to [Martin Paljak](https://github.com/ma
 
 
 ### Download APK:
-A readily built APK file can be found in the release section.
+A readily built APK file can be found in the release section
+(direct download link: [EMV-Key-Test-1.0.0.apk](https://github.com/johnzweng/android-emv-key-test/releases/download/1.0.0/EMV-Key-Test-1.0.0.apk)).
 
 ### TODO / not working:
 - get a nice logo
