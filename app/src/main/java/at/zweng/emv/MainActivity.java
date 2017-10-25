@@ -131,11 +131,11 @@ public class MainActivity extends AppCompatActivity {
                                 printResults();
                             } else {
                                 Log.w(TAG, "Reading finished, but cardNumber is null or empty..");
-                                log("Sorry, couldn't get parse the card.");
+                                log("Sorry, couldn't parse the card data. Is this an EMV banking card?");
                             }
                         } else {
                             Log.w(TAG, "reading finished, no exception but card == null..");
-                            log("Sorry, couldn't get parse the card (card is null).");
+                            log("Sorry, couldn't parse the card (card is null). Is this an EMV banking card?");
                         }
                     } else {
                         // TODO handle mException
