@@ -1,7 +1,5 @@
 package at.zweng.emv.keys;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.math.BigInteger;
 import java.util.Date;
 

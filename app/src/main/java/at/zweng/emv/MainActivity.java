@@ -24,7 +24,7 @@ import at.zweng.emv.keys.EmvPublicKey;
 import at.zweng.emv.keys.IssuerIccPublicKey;
 import at.zweng.emv.keys.checks.ROCACheck;
 import at.zweng.emv.provider.Provider;
-import at.zweng.emv.utils.EmvKeyReader;
+import at.zweng.emv.keys.EmvKeyReader;
 import at.zweng.emv.utils.NFCUtils;
 import at.zweng.emv.utils.SimpleAsyncTask;
 import com.github.devnied.emvnfccard.model.EmvCard;
