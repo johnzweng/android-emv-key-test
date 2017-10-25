@@ -26,6 +26,11 @@ where credits for porting it to Java go to [Martin Paljak](https://github.com/ma
 A readily built APK file can be found in the release section
 (direct download link: [EMV-Key-Test-1.0.0.apk](https://github.com/johnzweng/android-emv-key-test/releases/download/1.0.0/EMV-Key-Test-1.0.0.apk)).
 
+
+### Screenshot:
+![Screenshot](publication_resources/1.0.0/screenshots/screenshot_1.0.0_640px.png)
+
+
 ### TODO / not working:
 - get a nice logo
 - Currently the ICC PIN Encipherment RSA key (if present) is not checked
