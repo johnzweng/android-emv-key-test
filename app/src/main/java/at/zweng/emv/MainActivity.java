@@ -1,5 +1,8 @@
 package at.zweng.emv;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
@@ -7,8 +10,11 @@ import android.nfc.tech.IsoDep;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 import at.zweng.emv.ca.RootCa;
 import at.zweng.emv.ca.RootCaManager;
 import at.zweng.emv.keys.CaPublicKey;
@@ -78,56 +84,74 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.actionbar, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here.
+        int id = item.getItemId();
+        if (id == R.id.action_copy_output) {
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText(getString(R.string.clipboard_label), statusText.getText());
+            clipboard.setPrimaryClip(clip);
+            Toast toast = Toast.makeText(this, getString(R.string.action_copy_toast), Toast.LENGTH_SHORT);
+            toast.show();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         final Tag mTag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         if (mTag != null) {
 
             new SimpleAsyncTask() {
-                private IsoDep mTagcomm;
-                private EmvCard mCard;
-                private boolean mException;
+                private IsoDep tagIsoDep;
+                private EmvCard card;
+                private Exception exception;
 
                 @Override
                 protected void onPreExecute() {
                     super.onPreExecute();
                     cleanConsole();
                     log("Start reading card. Please wait...");
-                    // TODO: clear, show spinner or something similiar
                 }
 
                 @Override
                 protected void doInBackground() {
-                    mTagcomm = IsoDep.get(mTag);
-                    if (mTagcomm == null) {
-                        // TODO: show error toast or snackbar
+                    tagIsoDep = IsoDep.get(mTag);
+                    if (tagIsoDep == null) {
                         log("Couldn't connect to NFC card. Please try again.");
                         return;
                     }
-                    mException = false;
+                    exception = null;
 
                     try {
                         mReadCard = null;
                         // Open connection
-                        mTagcomm.connect();
-                        mProvider.setmTagCom(mTagcomm);
+                        tagIsoDep.connect();
+                        mProvider.setmTagCom(tagIsoDep);
                         EmvParser parser = new EmvParser(mProvider, true);
-                        mCard = parser.readEmvCard();
+                        card = parser.readEmvCard();
                     } catch (IOException e) {
-                        mException = true;
+                        exception = e;
                     } finally {
-                        closeQuietly(mTagcomm);
+                        closeQuietly(tagIsoDep);
                     }
                 }
 
                 @Override
                 protected void onPostExecute(final Object result) {
                     log("Reading finished.");
-                    // TODO hide spinner, etc..
-                    if (!mException) {
-                        if (mCard != null) {
-                            if (StringUtils.isNotBlank(mCard.getCardNumber())) {
-                                mReadCard = mCard;
+                    if (exception == null) {
+                        if (card != null) {
+                            if (StringUtils.isNotBlank(card.getCardNumber())) {
+                                mReadCard = card;
                                 printResults();
                             } else {
                                 Log.w(TAG, "Reading finished, but cardNumber is null or empty..");
@@ -138,9 +162,10 @@ public class MainActivity extends AppCompatActivity {
                             log("Sorry, couldn't parse the card (card is null). Is this an EMV banking card?");
                         }
                     } else {
-                        // TODO handle mException
-                        Log.w(TAG, "reading finished with exception..");
-                        log("Sorry, we catched an exception. Did you remove the card?\nPlease try again.");
+                        Log.w(TAG, "reading finished with exception.");
+                        log("Sorry, we got an error while reading: \"" + exception.getLocalizedMessage() +
+                                "\"\nDid you remove the card?\n\nPlease try again.");
+
                     }
                 }
             }.execute();
@@ -150,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Display results on screen and in log.
-     * TODO: ugly dump method, clean up, build more beautiful UI
+     * TODO: ugly dump method, clean up, build more beautiful UI, externalize strings.
      */
     private void printResults() {
         try {
@@ -209,21 +234,38 @@ public class MainActivity extends AppCompatActivity {
             log("");
         } catch (Exception e) {
             Log.e(TAG, "Exception catched while key validation.", e);
-            log("Exception catched while key validation:\n");
-            log(e.getLocalizedMessage() + "\n\n");
-            log("-----------------------------");
-            log("-----------------------------");
-            log("Technical details below:");
-            log(ExceptionUtils.getStackTrace(e));
-            log("-----------------------------");
-            log("-----------------------------");
+            logException("Exception catched while key validation:\n", e);
         }
     }
 
+    /**
+     * Log exception
+     *
+     * @param e
+     */
+    private void logException(String header, Exception e) {
+        log(header);
+        log(e.getLocalizedMessage() + "\n\n");
+        log("-----------------------------");
+        log("-----------------------------");
+        log("Technical details below:");
+        log(ExceptionUtils.getStackTrace(e));
+        log("-----------------------------");
+        log("-----------------------------");
+    }
+
+    /**
+     * Empty the text view
+     */
     private void cleanConsole() {
         statusText.setText("");
     }
 
+    /**
+     * Write to text view on screen and logcat
+     *
+     * @param msg
+     */
     private void log(String msg) {
         Log.i(TAG, msg);
         StringBuffer buf = new StringBuffer(statusText.getText());
@@ -238,11 +280,22 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Format a date contining only month and year
+     *
+     * @param monthYear
+     * @return date string
+     */
     private String formatDate(Date monthYear) {
         SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy");
         return sdf.format(monthYear);
     }
 
+    /**
+     * Close connection to tag, ignore exceptions
+     *
+     * @param tagComm
+     */
     private void closeQuietly(IsoDep tagComm) {
         try {
             if (tagComm != null) {
