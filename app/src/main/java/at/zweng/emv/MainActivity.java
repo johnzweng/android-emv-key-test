@@ -10,6 +10,8 @@ import android.nfc.tech.IsoDep;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ScrollView;
@@ -34,6 +36,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Random;
 
 import static at.zweng.emv.utils.EmvUtils.notEmpty;
 
@@ -52,10 +55,12 @@ public class MainActivity extends AppCompatActivity {
      * IsoDep provider
      */
     private Provider mProvider = new Provider();
+    private boolean tipFlag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        tipFlag = false;
         setContentView(R.layout.activity_main);
         nfcUtils = new NFCUtils(this);
         statusText = findViewById(R.id.statusText);
@@ -74,8 +79,19 @@ public class MainActivity extends AppCompatActivity {
         } else {
             nfcUtils.enableDispatch();
         }
+
+        // only show once in lifetime of activity and only in 5% of starts (to not be annoying)
+        if (!tipFlag && randomlyTrueInXpercent(5)) {
+            Toast.makeText(this, getString(R.string.tip_volume_keys), Toast.LENGTH_SHORT).show();
+        }
+        tipFlag = true;
         super.onResume();
     }
+
+    private boolean randomlyTrueInXpercent(int xPercent) {
+        return new Random().nextInt(100) < xPercent;
+    }
+
 
     @Override
     protected void onPause() {
@@ -103,6 +119,29 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        int action = event.getAction();
+        int keyCode = event.getKeyCode();
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_VOLUME_UP:
+                if (action == KeyEvent.ACTION_DOWN) {
+                    float oldSizePx = statusText.getTextSize();
+                    statusText.setTextSize(TypedValue.COMPLEX_UNIT_PX, (float) (oldSizePx * 1.1));
+                }
+                return true;
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+                if (action == KeyEvent.ACTION_DOWN) {
+                    float oldSizePx = statusText.getTextSize();
+                    statusText.setTextSize(TypedValue.COMPLEX_UNIT_PX, (float) (oldSizePx * 0.9));
+                }
+                return true;
+            default:
+                return super.dispatchKeyEvent(event);
+        }
+    }
+
 
     @Override
     protected void onNewIntent(Intent intent) {
