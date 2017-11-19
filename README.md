@@ -9,6 +9,8 @@ The keys are also checked for the
 [ROCA vulnerability](https://crocs.fi.muni.cz/public/papers/rsa_ccs17)
 (see also the note below).
 
+**Update Nov 19, 2017**: I've written also a posting on Google+ summarizing what I've done here: https://plus.google.com/+JohannesZweng/posts/bjPMWHT8k7r
+
 
 ##### Source details
 If you want to see how the EMV public keys are recovered from certificates
